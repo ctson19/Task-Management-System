@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -11,13 +13,15 @@ using TaskManagement.Api.Service.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ===========================
+// Add services
+// ===========================
+
 // Controllers
 builder.Services.AddControllers();
 
-// ? B?T BU?C
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
-
-// ? CH? 1 AddSwaggerGen DUY NH?T
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -26,7 +30,7 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 
-    // ?? JWT
+    // JWT Authorization in Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -53,13 +57,30 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// DB
+// Database
 builder.Services.AddDbContext<TaskManagementDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MyDB")));
 
-// JWT
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+// ===========================
+// Authentication
+// ===========================
+builder.Services
+    .AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+    })
+    .AddCookie()
+    .AddGoogle(options =>
+    {
+        options.ClientId =
+            builder.Configuration["Authentication:Google:ClientId"]!;
+        options.ClientSecret =
+            builder.Configuration["Authentication:Google:ClientSecret"]!;
+        options.CallbackPath = "/signin-google";
+    })
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -75,15 +96,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Authorization
 builder.Services.AddAuthorization();
 
-// DI
+// ===========================
+// Dependency Injection
+// ===========================
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEmailOtpRepository, EmailOtpRepository>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
+// ===========================
+// Build app
+// ===========================
 var app = builder.Build();
 
 // Swagger
@@ -98,7 +125,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
+app.UseAuthentication(); // ?? tr??c Authorization
 app.UseAuthorization();
 
 app.MapControllers();

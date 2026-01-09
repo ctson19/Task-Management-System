@@ -1,8 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TaskManagement.Api.DTO.AuthDTO;
+using TaskManagement.Api.Models;
 using TaskManagement.Api.Service.Implementations;
 using TaskManagement.Api.Service.Interfaces;
 
@@ -113,6 +117,40 @@ namespace TaskManagement.Api.Controllers
             {
                 return StatusCode(500, new { message = "Có lỗi xảy ra. Vui lòng thử lại sau." });
             }
+        }
+
+
+        [HttpGet("google-login")]
+        public IActionResult GoogleLogin()
+        {
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action("GoogleCallback")
+            };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet("google-callback")]
+        public async Task<IActionResult> GoogleCallback()
+        {
+            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+                return BadRequest("Google authentication failed");
+
+            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
+            var name = result.Principal.FindFirstValue(ClaimTypes.Name);
+
+            // ✅ Gọi service để xử lý login/registration
+            var user = await _authService.GoogleLoginOrRegisterAsync(email, name);
+
+            // Tạo JWT token
+            var token = _authService.GenerateJwtToken(user);
+
+            return Ok(new GoogleLoginResponseDto
+            {
+                AccessToken = token,
+                ExpiredAt = DateTime.UtcNow.AddHours(2)
+            });
         }
     }
 }

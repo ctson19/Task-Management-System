@@ -40,7 +40,7 @@ namespace TaskManagement.Api.Service.Implementations
             };
         }
 
-        private string GenerateJwtToken(User user)
+        public string GenerateJwtToken(User user)
         {
             var claims = new List<Claim>
         {
@@ -106,6 +106,24 @@ namespace TaskManagement.Api.Service.Implementations
             };
         }
 
-
+        public async Task<User> GoogleLoginOrRegisterAsync(string email, string name)
+        {
+            // Kiểm tra user đã tồn tại chưa
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null)
+            {
+                user = new User
+                {
+                    Id = Guid.NewGuid(),
+                    Email = email,
+                    UserName = name,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    PasswordHash = "" // Google login, để trống
+                };
+                await _userRepository.AddAsync(user);
+            }
+            return user;
+        }
     }
 }
