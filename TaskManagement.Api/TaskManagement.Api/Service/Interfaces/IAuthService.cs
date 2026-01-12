@@ -1,4 +1,5 @@
-﻿using TaskManagement.Api.DTO.AuthDTO;
+﻿using System.Security.Claims;
+using TaskManagement.Api.DTO.AuthDTO;
 using TaskManagement.Api.Models;
 
 namespace TaskManagement.Api.Service.Interfaces
@@ -11,6 +12,6 @@ namespace TaskManagement.Api.Service.Interfaces
 
         Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request);
 
-        Task<User> GoogleLoginOrRegisterAsync(string email, string name);
+        Task<GoogleLoginResponseDto> GoogleLoginAsync(ClaimsPrincipal principal);
     }
 }

@@ -123,34 +123,28 @@ namespace TaskManagement.Api.Controllers
         [HttpGet("google-login")]
         public IActionResult GoogleLogin()
         {
-            var properties = new AuthenticationProperties
+            var props = new AuthenticationProperties
             {
-                RedirectUri = Url.Action("GoogleCallback")
+                RedirectUri = "/api/auth/google-callback"
             };
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+
+            return Challenge(props, GoogleDefaults.AuthenticationScheme);
         }
+
 
         [HttpGet("google-callback")]
         public async Task<IActionResult> GoogleCallback()
         {
-            var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            var result = await HttpContext.AuthenticateAsync("External");
+
             if (!result.Succeeded)
-                return BadRequest("Google authentication failed");
+                return Unauthorized();
 
-            var email = result.Principal.FindFirstValue(ClaimTypes.Email);
-            var name = result.Principal.FindFirstValue(ClaimTypes.Name);
+            var response = await _authService.GoogleLoginAsync(result.Principal);
 
-            // ✅ Gọi service để xử lý login/registration
-            var user = await _authService.GoogleLoginOrRegisterAsync(email, name);
-
-            // Tạo JWT token
-            var token = _authService.GenerateJwtToken(user);
-
-            return Ok(new GoogleLoginResponseDto
-            {
-                AccessToken = token,
-                ExpiredAt = DateTime.UtcNow.AddHours(2)
-            });
+            return Ok(response);
         }
+
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -106,24 +107,39 @@ namespace TaskManagement.Api.Service.Implementations
             };
         }
 
-        public async Task<User> GoogleLoginOrRegisterAsync(string email, string name)
+        public async Task<GoogleLoginResponseDto> GoogleLoginAsync(ClaimsPrincipal principal)
         {
-            // Kiểm tra user đã tồn tại chưa
+            var email = principal.FindFirstValue(ClaimTypes.Email);
+            var name = principal.FindFirstValue(ClaimTypes.Name);
+
+            if (string.IsNullOrEmpty(email))
+                throw new Exception("Google account does not provide email");
+
             var user = await _userRepository.GetByEmailAsync(email);
+
             if (user == null)
             {
                 user = new User
                 {
                     Id = Guid.NewGuid(),
                     Email = email,
-                    UserName = name,
+                    UserName = name ?? email,
+                    PasswordHash = "",
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                    PasswordHash = "" // Google login, để trống
+                    CreatedAt = DateTime.UtcNow
                 };
+
                 await _userRepository.AddAsync(user);
             }
-            return user;
+
+            var token = GenerateJwtToken(user);
+
+            return new GoogleLoginResponseDto
+            {
+                AccessToken = token,
+                ExpiredAt = DateTime.UtcNow.AddHours(2)
+            };
         }
+
     }
 }
