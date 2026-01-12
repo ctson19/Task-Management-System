@@ -22,7 +22,7 @@ public partial class TaskManagementDbContext : DbContext
     public virtual DbSet<Permission> Permissions { get; set; }
 
     public virtual DbSet<Project> Projects { get; set; }
-
+    public virtual DbSet<ProjectMember> ProjectMembers { get; set; }
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<TaskItem> Tasks { get; set; }
@@ -91,6 +91,37 @@ public partial class TaskManagementDbContext : DbContext
                 .HasForeignKey(d => d.CreatedBy)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Projects_Users");
+        });
+
+        modelBuilder.Entity<ProjectMember>(entity =>
+        {
+            entity.ToTable("ProjectMembers");
+
+            entity.HasKey(e => e.Id);
+
+            entity.HasIndex(e => new { e.ProjectId, e.UserId })
+                  .IsUnique()
+                  .HasDatabaseName("UQ_ProjectMembers_Project_User");
+
+            entity.Property(e => e.Id)
+                  .HasDefaultValueSql("(newid())");
+
+            entity.Property(e => e.Role)
+                  .HasMaxLength(20)
+                  .HasDefaultValue("Member");
+
+            entity.Property(e => e.JoinedAt)
+                  .HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Project)
+                  .WithMany(p => p.ProjectMembers)
+                  .HasForeignKey(d => d.ProjectId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.User)
+                  .WithMany(u => u.ProjectMembers)
+                  .HasForeignKey(d => d.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Role>(entity =>

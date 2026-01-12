@@ -8,13 +8,19 @@ namespace TaskManagement.Api.Service.Implementations
     public class ProjectService : IProjectService
     {
         private readonly IProjectRepository _projectRepository;
+        private readonly IProjectMemberRepository _projectMemberRepository;
 
-        public ProjectService(IProjectRepository projectRepository)
+        public ProjectService(
+            IProjectRepository projectRepository,
+            IProjectMemberRepository projectMemberRepository)
         {
             _projectRepository = projectRepository;
+            _projectMemberRepository = projectMemberRepository;
         }
 
-        public async Task<ProjectResponseDto> CreateAsync(CreateProjectRequestDto request, Guid userId)
+        public async Task<ProjectResponseDto> CreateAsync(
+    CreateProjectRequestDto request,
+    Guid userId)
         {
             var project = new Project
             {
@@ -25,7 +31,20 @@ namespace TaskManagement.Api.Service.Implementations
                 CreatedAt = DateTime.UtcNow
             };
 
+            // 1️⃣ Tạo project
             await _projectRepository.AddAsync(project);
+
+            // 2️⃣ Gắn OWNER vào ProjectMembers
+            await _projectMemberRepository.AddAsync(new ProjectMember
+            {
+                ProjectId = project.Id,
+                UserId = userId,
+                Role = "Owner",
+                JoinedAt = DateTime.UtcNow
+            });
+
+            // 3️⃣ Save chung
+            await _projectMemberRepository.SaveChangesAsync();
 
             return MapToDto(project);
         }

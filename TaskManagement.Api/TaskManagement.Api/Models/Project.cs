@@ -18,4 +18,5 @@ public partial class Project
     public virtual User CreatedByNavigation { get; set; } = null!;
 
     public virtual ICollection<TaskItem> Tasks { get; set; } = new List<TaskItem>();
+    public virtual ICollection<ProjectMember> ProjectMembers { get; set; }
 }
