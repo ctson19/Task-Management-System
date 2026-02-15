@@ -225,6 +225,36 @@ public partial class TaskManagementDbContext : DbContext
                     });
         });
 
+        modelBuilder.Entity<ProjectAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__ProjectA__3214EC07C39855EB");
+
+            entity.HasIndex(e => new { e.ProjectId, e.OriginalFileId, e.Version }, "IX_ProjectAttachments_Project_File").IsDescending(false, false, true);
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ContentType).HasMaxLength(100);
+            entity.Property(e => e.FileName).HasMaxLength(255);
+            entity.Property(e => e.FilePath).HasMaxLength(500);
+            entity.Property(e => e.StoredFileName).HasMaxLength(255);
+            entity.Property(e => e.UploadedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Version).HasDefaultValue(1);
+        });
+
+        modelBuilder.Entity<TaskAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TaskAtta__3214EC0785C3C978");
+
+            entity.HasIndex(e => new { e.TaskId, e.OriginalFileId, e.Version }, "IX_TaskAttachments_Task_File").IsDescending(false, false, true);
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ContentType).HasMaxLength(100);
+            entity.Property(e => e.FileName).HasMaxLength(255);
+            entity.Property(e => e.FilePath).HasMaxLength(500);
+            entity.Property(e => e.StoredFileName).HasMaxLength(255);
+            entity.Property(e => e.UploadedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Version).HasDefaultValue(1);
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 
