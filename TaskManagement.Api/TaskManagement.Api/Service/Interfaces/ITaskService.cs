@@ -9,6 +9,5 @@ namespace TaskManagement.Api.Service.Interfaces
         Task<List<TaskResponseDto>> GetByProjectAsync(Guid projectId, Guid userId);
         Task UpdateAsync(Guid taskId, UpdateTaskRequestDto dto, Guid userId);
         Task DeleteAsync(Guid taskId, Guid userId);
-        TaskResponseDto MapToDto(TaskItem task);
     }
 }
